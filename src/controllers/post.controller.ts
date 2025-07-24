@@ -3,7 +3,7 @@ import { postService, IPostService } from '../services/post.service';
 import { CreatePostRequest, UpdatePostRequest, PostResponse, PostsResponse } from '../types/post.types';
 import { ApiResponse, PaginatedResponse } from '../types/response.types';
 
-export class UserController {
+export class PostController {
     private postService: IPostService;
 
     constructor(injectedUserService?: IPostService) {
@@ -62,8 +62,8 @@ export class UserController {
 
     async createPost(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const userData: CreatePostRequest = req.body;
-            const newPost = await this.postService.createPost(userData);
+            const postData: CreatePostRequest = req.body;
+            const newPost = await this.postService.createPost(postData);
 
             const response: ApiResponse<PostResponse> = {
                 success: true,
@@ -162,4 +162,4 @@ export class UserController {
     }
 }
 
-export const postController = new UserController();
+export const postController = new PostController();

@@ -9,7 +9,7 @@ export interface IPostService {
   createPost(userData: CreatePostRequest): Promise<PostResponse>;
   updatePost(id: string, updates: UpdatePostRequest): Promise<PostResponse | null>;
   deletePost(id: string): Promise<boolean>;
-  readonly totalUsers: number;
+  readonly totalPosts: number;
 }
 
 // In-memory storage (in real life, this would be a database)
@@ -22,7 +22,7 @@ export class PostService implements IPostService {
         this.seedData();
     }
 
-    get totalUsers(): number {
+    get totalPosts(): number {
         return this.posts.size;
     }
 
