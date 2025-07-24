@@ -2,7 +2,7 @@ import { PaginatedResponse } from '../types/response.types';
 import { User, CreateUserRequest, UpdateUserRequest, UserResponse } from '../types/user.types';
 import { PaginationUtils } from '../utils/pagination.util';
 
-// For integraition tests, you might want to use a mock
+// For integration tests, you might want to use a mock
 export interface IUserService {
   getAllUsers(page: number, limit: number): Promise<PaginatedResponse<UserResponse>>;
   getUserById(id: string): Promise<UserResponse | null>;

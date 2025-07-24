@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { userRoutes } from './routes/user.routes';
+import { postRoutes } from './routes/post.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 class App {
@@ -45,6 +46,7 @@ class App {
 
     // API routes
     this.app.use('/api/users', userRoutes);
+    this.app.use('/api/posts', postRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {
@@ -68,6 +70,7 @@ class App {
       console.log(`🚀 Server running on port ${this.port}`);
       console.log(`📋 Health check: http://localhost:${this.port}/health`);
       console.log(`👥 Users API: http://localhost:${this.port}/api/users`);
+      console.log(`📝 Posts API: http://localhost:${this.port}/api/posts`);
     });
   }
 }
