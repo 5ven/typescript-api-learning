@@ -115,6 +115,24 @@ Testing with tools like Postman and curl:
 | `PUT`    | `/api/users/:id` | Update existing user | See example below.                                 |
 | `DELETE` | `/api/users/:id` | Delete user          | `curl -X DELETE http://localhost:3000/api/users/1` |
 
+### Posts API
+
+| Method   | Endpoint                      | Description              | Try It                                               |
+|----------|-------------------------------|--------------------------|------------------------------------------------------|
+| `GET`    | `/api/posts`                  | Get paginated posts      | `curl http://localhost:3000/api/posts`               |
+| `GET`    | `/api/posts/:id`              | Get specific post        | `curl http://localhost:3000/api/posts/1`             |
+| `GET`    | `/api/posts/author/:authorId` | Get posts by author      | `curl http://localhost:3000/api/posts/author/1`      |
+| `POST`   | `/api/posts`                  | Create new post          | See example below                                    |
+| `PUT`    | `/api/posts/:id`              | Update existing post     | See example below                                    |
+| `DELETE` | `/api/posts/:id`              | Delete post              | `curl -X DELETE http://localhost:3000/api/posts/1`   |
+
+### Query Parameters
+
+| Parameter | Type     | Default | Max  | Description                    |
+|-----------|----------|---------|------|--------------------------------|
+| `page`    | `number` | `1`     | -    | Page number for pagination     |
+| `limit`   | `number` | `10`    | `100`| Items per page                 |
+
 ### System
 
 | Method | Endpoint | Description                       |
@@ -123,7 +141,18 @@ Testing with tools like Postman and curl:
 
 ### Examples
 
-**Create your first user:**
+**Create a new post:**
+```bash
+curl -X POST http://localhost:3000/api/posts
+-H "Content-Type: application/json"
+-d '{
+"title": "My Awesome Post",
+"content": "This is the content of my post...",
+"authorId": "1",
+"isVisible": true
+}'
+```
+**Create a new user:**
 ```bash
 curl -X POST http://localhost:3000/api/users \
 -H "Content-Type: application/json" \
@@ -131,6 +160,25 @@ curl -X POST http://localhost:3000/api/users \
 "name": "Learning User",
 "email": "learner@example.com",
 "age": 25
+}'
+```
+**Update a user:**
+```bash
+curl -X PUT http://localhost:3000/api/users/1
+-H "Content-Type: application/json"
+-d '{
+"name": "Jane Doe",
+"age": 31
+}'
+```
+**Update a post:**
+```bash
+curl -X PUT http://localhost:3000/api/posts/1
+-H "Content-Type: application/json"
+-d '{
+"title": "Updated Post Title",
+"content": "Updated content...",
+"isVisible": false
 }'
 ```
 **Pagination:**
@@ -145,6 +193,16 @@ curl -X POST http://localhost:3000/api/users \
 -H "Content-Type: application/json" \
 -d '{"name": "Learning User"}'
 ```
+
+### Quick Test Suite
+
+Under the `tests/scripts/` directory you will find two scripts:
+
+- **`api-test-suite.sh`** - Comprehensive test suite that tests all endpoints with detailed reporting, multiple output formats, and error handling
+- **`basic-test.sh`** - Quick smoke test for daily development workflow
+
+Both scripts have been tested on macOS 12.7 with Bash 5+ installed via Homebrew.
+
 ## Learning Highlights
 
 ### TypeScript Patterns
