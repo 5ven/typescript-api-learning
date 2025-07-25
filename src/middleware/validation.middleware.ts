@@ -10,7 +10,7 @@ export const validateCreatePost = (
   res: Response,
   next: NextFunction
 ): void => {
-  const { title, content, authorId } = req.body as CreatePostRequest; // Adjust type as needed    
+  const { title, content, authorId } = req.body as CreatePostRequest;
   const errors: string[] = [];
   // Validate required fields
   if (!title || typeof title !== 'string' || title.trim().length < 2) {

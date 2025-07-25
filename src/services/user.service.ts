@@ -1,9 +1,15 @@
-import { PaginatedResponse } from '../types/response.types';
+import { BaseService } from './base.service';
 import { User, CreateUserRequest, UpdateUserRequest, UserResponse } from '../types/user.types';
-import { PaginationUtils } from '../utils/pagination.util';
+import { PaginatedResponse } from '../types/response.types';
 
-// For integration tests, you might want to use a mock
 export interface IUserService {
+  // BaseController methods
+  getById(id: string): Promise<UserResponse | null>;
+  getAll(page: number, limit: number): Promise<PaginatedResponse<UserResponse>>;
+  create(data: CreateUserRequest): Promise<UserResponse>;
+  update(id: string, updates: UpdateUserRequest): Promise<UserResponse | null>;
+  delete(id: string): Promise<boolean>;
+  // User-specific methods
   getAllUsers(page: number, limit: number): Promise<PaginatedResponse<UserResponse>>;
   getUserById(id: string): Promise<UserResponse | null>;
   createUser(userData: CreateUserRequest): Promise<UserResponse>;
@@ -12,125 +18,102 @@ export interface IUserService {
   readonly totalUsers: number;
 }
 
-// In-memory storage (in real life, this would be a database)
-export class UserService implements IUserService {
-    private users: Map<string, User> = new Map();
-    private nextId = 1;
+export class UserService 
+  extends BaseService<User, UserResponse, CreateUserRequest, UpdateUserRequest> 
+  implements IUserService {
 
-    constructor() {
-        // Seed some data for testing
-        this.seedData();
+  // Implement abstract methods
+  protected seedData(): void {
+    const sampleUsers: User[] = [
+      {
+        id: '1',
+        name: 'John Doe',
+        email: 'john@seed-data.com',
+        age: 30,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: '2',
+        name: 'Jane Smith',
+        email: 'jane@seed-data.com',
+        age: 25,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+
+    sampleUsers.forEach(user => {
+      this.storage.set(user.id, user);
+      this.nextId = Math.max(this.nextId, parseInt(user.id) + 1);
+    });
+  }
+
+  protected toResponse(user: User): UserResponse {
+    const { updatedAt, createdAt, ...userResponse } = user;
+    return userResponse;
+  }
+
+  protected async validateUniqueness(data: CreateUserRequest): Promise<void> {
+    const existingUser = Array.from(this.storage.values())
+      .find(user => user.email === data.email);
+
+    if (existingUser) {
+      throw new Error('User with this email already exists');
     }
+  }
 
-    get totalUsers(): number {
-        return this.users.size;
-    }
+  protected async validateUpdateUniqueness(id: string, updates: UpdateUserRequest): Promise<void> {
+    if (updates.email) {
+      const existingUser = this.storage.get(id);
+      if (existingUser && updates.email !== existingUser.email) {
+        const emailExists = Array.from(this.storage.values())
+          .some(user => user.id !== id && user.email === updates.email);
 
-    private seedData(): void {
-        const sampleUsers: User[] = [
-            {
-                id: '1',
-                name: 'John Doe',
-                email: 'john@seed-data.com',
-                age: 30,
-                isActive: true,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            },
-            {
-                id: '2',
-                name: 'Jane Smith',
-                email: 'jane@seed-data.com',
-                age: 25,
-                isActive: true,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
-        ];
-
-        sampleUsers.forEach(user => {
-            this.users.set(user.id, user);
-            this.nextId = Math.max(this.nextId, parseInt(user.id) + 1);
-        });
-    }
-
-    async getAllUsers(page: number = 1, limit: number = 10): Promise<PaginatedResponse<UserResponse>> {
-        // Validate parameters
-        const params = PaginationUtils.validateParams({ page, limit });
-
-        // Get all users and convert to responses
-        const allUsers = Array.from(this.users.values());
-        const userResponses = allUsers.map(this.toUserResponse);
-
-        // Use utility for pagination
-        return PaginationUtils.paginate(userResponses, params.page, params.limit);
-    }
-
-    async getUserById(id: string): Promise<UserResponse | null> {
-        const user = this.users.get(id);
-        return user ? this.toUserResponse(user) : null;
-    }
-
-    async createUser(userData: CreateUserRequest): Promise<UserResponse> {
-        // Check if email already exists
-        const existingUser = Array.from(this.users.values())
-            .find(user => user.email === userData.email);
-
-        if (existingUser) {
-            throw new Error('User with this email already exists');
+        if (emailExists) {
+          throw new Error('Email already in use by another user');
         }
-
-        const now = new Date();
-        const newUser: User = {
-            id: this.nextId.toString(),
-            ...userData,
-            isActive: true,
-            createdAt: now,
-            updatedAt: now
-        };
-
-        this.users.set(newUser.id, newUser);
-        this.nextId++;
-
-        return this.toUserResponse(newUser);
+      }
     }
+  }
 
-    async updateUser(id: string, updates: UpdateUserRequest): Promise<UserResponse | null> {
-        const existingUser = this.users.get(id);
+  protected createEntityFromRequest(data: CreateUserRequest): User {
+    const now = new Date();
+    return {
+      id: this.generateId(),
+      ...data,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now
+    };
+  }
 
-        if (!existingUser) {
-            return null;
-        }
+  // Interface implementation (delegates to base class)
+  async getAllUsers(page: number, limit: number): Promise<PaginatedResponse<UserResponse>> {
+    return this.getAll(page, limit);
+  }
 
-        // Check email uniqueness if email is being updated
-        if (updates.email && updates.email !== existingUser.email) {
-            const emailExists = Array.from(this.users.values())
-                .some(user => user.id !== id && user.email === updates.email);
+  async getUserById(id: string): Promise<UserResponse | null> {
+    return this.getById(id);
+  }
 
-            if (emailExists) {
-                throw new Error('Email already in use by another user');
-            }
-        }
+  async createUser(userData: CreateUserRequest): Promise<UserResponse> {
+    return this.create(userData);
+  }
 
-        const updatedUser: User = {
-            ...existingUser,
-            ...updates,
-            updatedAt: new Date()
-        };
+  async updateUser(id: string, updates: UpdateUserRequest): Promise<UserResponse | null> {
+    return this.update(id, updates);
+  }
 
-        this.users.set(id, updatedUser);
-        return this.toUserResponse(updatedUser);
-    }
+  async deleteUser(id: string): Promise<boolean> {
+    return this.delete(id);
+  }
 
-    async deleteUser(id: string): Promise<boolean> {
-        return this.users.delete(id);
-    }
-
-    // Convert internal User to public UserResponse
-    private toUserResponse(user: User): UserResponse {
-        const { updatedAt, createdAt, ...userResponse } = user;
-        return userResponse;
-    }
+  get totalUsers(): number {
+    return this.totalCount;
+  }
 }
 
 export const userService = new UserService();
